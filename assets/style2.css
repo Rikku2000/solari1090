@@ -1,0 +1,469 @@
+@font-face{
+  font-family:"Solari";
+  src:url("./solari.ttf") format("truetype");
+  font-display:swap;
+}
+
+:root{
+  --bg:#070605;
+  --panel:#0c0a08;
+
+  --amber:#ffbf2f;
+  --amberHi:#ffd676;
+  --amberDim:#c79b26;
+
+  --tile1:#2a2724;
+  --tile2:#171513;
+  --tileSeam:rgba(0,0,0,.55);
+
+  --good:#35ff78;
+  --warn:#ff4a4a;
+
+  --flapText:var(--amberHi);
+}
+
+html,body{height:100%;overflow:hidden}
+
+body{
+  margin:0; min-height:100vh;
+  display:flex; flex-direction:column;
+  background:radial-gradient(1200px 700px at 20% 0%, #14100c 0%, var(--bg) 55%, #040303 100%);
+  color:var(--amber);
+
+  font-family:"Arial Narrow", system-ui, sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.9px;
+}
+
+.board{
+  flex:1;
+  overflow:auto;
+  position:relative;
+  background:linear-gradient(180deg, rgba(255,191,47,.04), transparent 40%), var(--panel);
+  padding-bottom:10px;
+
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.board::-webkit-scrollbar{display:none}
+
+.board::before{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 380px at 50% 0%, rgba(255,191,47,.06), transparent 65%),
+    radial-gradient(1200px 700px at 50% 100%, rgba(0,0,0,.55), transparent 55%),
+    radial-gradient(circle, rgba(255,255,255,.02) 1px, transparent 1.4px) 0 0/7px 7px;
+  opacity:.85;
+  mix-blend-mode:overlay;
+}
+
+.topbar{
+  background:transparent;
+  color:var(--amber);
+  padding:18px 18px 10px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; flex-wrap:wrap;
+}
+
+.titleLeft{
+  display:flex; align-items:center; gap:12px;
+  font-size:42px; font-weight:950;
+  letter-spacing:1.2px;
+}
+
+.plane{
+  width:54px;height:54px;
+  border-radius:6px;
+  position:relative;
+  background:
+    linear-gradient(180deg, rgba(255,191,47,.18), rgba(255,191,47,.06)),
+    linear-gradient(180deg, #0e0b08, #050403);
+  border:2px solid rgba(255,191,47,.85);
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.55),
+    0 0 0 2px rgba(255,191,47,.10) inset;
+}
+.plane::before{
+  content:"✈";
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:30px;
+  color:var(--amber);
+  text-shadow:0 0 10px rgba(255,191,47,.22);
+}
+
+.airportName{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:2px;
+  opacity:.95;
+  text-align:right;
+  white-space:nowrap;
+  color:var(--amberHi);
+  text-shadow:0 0 10px rgba(255,191,47,.16), 0 0 2px rgba(255,191,47,.25);
+}
+
+.subbar{
+  background:transparent;
+  color:rgba(255,191,47,.75);
+  padding:0 18px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px;
+}
+.tab{
+  border:2px solid rgba(255,191,47,.55);
+  color:rgba(255,191,47,.85);
+  background:transparent;
+  padding:7px 12px;
+  border-radius:8px;
+  font-weight:900;
+  cursor:pointer;
+}
+.tab.active{
+  background:transparent;
+  color:var(--amberHi);
+  border-color:rgba(255,191,47,.9);
+  box-shadow:0 0 0 2px rgba(255,191,47,.10) inset;
+}
+.meta{font-size:14px;color:rgba(255,191,47,.6)}
+.clock{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:2px;
+  color:var(--amberHi);
+  text-shadow:0 0 12px rgba(255,191,47,.18), 0 0 2px rgba(255,191,47,.22);
+}
+
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0 8px;
+}
+
+thead th{
+  background:transparent;
+  color:rgba(255,191,47,.75);
+  text-align:left;
+  padding:0 22px 6px;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:2px;
+}
+
+tbody td{
+  padding:10px 22px;
+  white-space:nowrap;
+}
+tbody tr:nth-child(odd),
+tbody tr:nth-child(even){background:transparent}
+
+td.airline {
+  padding: 6px 10px;
+}
+.airline-logo {
+  height: 64px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.6));
+}
+
+.col-right{text-align:right}
+
+.status{font-weight:950;letter-spacing:1.6px}
+.status.good{color:var(--good);text-shadow:0 0 10px rgba(53,255,120,.14)}
+.status.warn{color:var(--warn);text-shadow:0 0 10px rgba(255,74,74,.14)}
+
+.airlineLogo{
+  width:34px;height:34px;
+  border-radius:6px;
+  background:linear-gradient(180deg, #1b1916, #0f0d0b);
+  border:1px solid rgba(255,191,47,.16);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset;
+  object-fit:contain;
+}
+
+.footer{
+  margin-top:auto;
+  background:transparent;
+  color:rgba(255,191,47,.6);
+  padding:10px 16px 14px;
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:14px;
+  border-top:1px solid rgba(255,191,47,.18);
+}
+
+:root{
+  --cellW:18px;
+  --cellH:26px;
+  --gap:4px;
+}
+
+.flapline{
+  display:inline-flex;
+  align-items:center;
+  gap:var(--gap);
+  font-family:"Solari","Arial Narrow",system-ui,sans-serif;
+  font-size:26px;
+  letter-spacing:0;
+  text-transform:uppercase;
+}
+
+.flap{
+  width:var(--cellW);
+  height:var(--cellH);
+  position:relative;
+  border-radius:2px;
+  overflow:hidden;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 40%),
+    linear-gradient(180deg, #1a1a1a, #0d0d0d);
+
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.06) inset,
+    0 -2px 4px rgba(0,0,0,.8) inset,
+    0 2px 6px rgba(0,0,0,.6);
+}
+
+.flap::after{
+  content:"";
+  position:absolute;
+  left:1px; right:1px;
+  top:50%;
+  height:2px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.9),
+      rgba(255,255,255,.08),
+      rgba(0,0,0,.9)
+    );
+
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.9),
+    0 -1px 1px rgba(255,255,255,.06);
+
+  z-index:5;
+}
+
+.flap .top{
+  background:linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+}
+
+.flap .bot{
+  background:linear-gradient(0deg, rgba(0,0,0,.35), transparent);
+}
+
+.flap .top,
+.flap .bot,
+.flap .flipTop,
+.flap .flipBot{
+  position:absolute;
+  left:0; right:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding-top:1px;
+  color:var(--flapText);
+  backface-visibility:hidden;
+  transform-style:preserve-3d;
+  text-shadow:0 0 10px rgba(0,0,0,.25);
+}
+
+.flap .top,
+.flap .flipTop{ top:0; height:50%; }
+.flap .bot,
+.flap .flipBot{
+  bottom:0; height:50%;
+  align-items:flex-start;
+  padding-top:0;
+}
+
+.flap .top,.flap .flipTop{
+  top:1px; height:100%;
+  align-items:flex-end;
+}
+.flap .bot,.flap .flipBot{
+  bottom:1px; height:100%;
+  align-items:flex-start;
+}
+
+.flap .top::before,
+.flap .bot::before{ content:attr(data-char); }
+
+.flap .flipTop::before{ content:attr(data-old); }
+.flap .flipBot::before{ content:attr(data-new); }
+
+.flap .flipTop,
+.flap .flipBot{ display:none; }
+
+.flap.is-flipping .flipTop,
+.flap.is-flipping .flipBot{ display:flex; }
+
+.flap.is-flipping .flipTop{
+  animation:flipTop 0.75s cubic-bezier(.3,.9,.2,1) forwards;
+}
+
+.flap.is-flipping .flipBot{
+  transform:rotateX(90deg);
+  animation:flipBot 0.30s cubic-bezier(.2,.8,.2,1) 0.75s forwards;
+}
+
+@keyframes flipTop{
+  0%{
+    transform:rotateX(0deg);
+    filter:brightness(1);
+  }
+  100%{
+    transform:rotateX(-92deg);
+    filter:brightness(.6);
+  }
+}
+
+@keyframes flipBot{
+  0%{
+    transform:rotateX(90deg);
+    filter:brightness(.6);
+  }
+  100%{
+    transform:rotateX(0deg);
+    filter:brightness(1);
+  }
+}
+
+.flap.space{ opacity:.35; }
+
+.flapline.iata .flap .top,
+.flapline.iata .flap .bot{ color:var(--amber); }
+
+@media (max-width:1100px){
+  .titleLeft{font-size:28px}
+  .flapline{font-size:18px}
+  :root{--cellW:14px;--cellH:20px;--gap:3px;}
+}
+@media (max-width:700px){
+  thead th{font-size:12px;padding:0 10px 6px}
+  tbody td{font-size:14px;padding:8px 10px}
+  .plane{width:38px;height:38px}
+  .clock,.airportName{font-size:14px}
+  .flapline{font-size:14px}
+  :root{--cellW:12px;--cellH:18px;--gap:3px;}
+  .flap{
+    perspective: 900px;
+    transform: translateZ(0);
+  }
+  .flap .top,.flap .flipTop{
+    top:-1px; height:100%;
+    align-items:flex-end;
+  }
+  .flap .bot,.flap .flipBot{
+    bottom:-1px; height:100%;
+    align-items:flex-start;
+  }
+  .flap .flipTop{ transform-origin: 50% 100%; }
+  .flap .flipBot{ transform-origin: 50% 0%; }
+}
+
+.preloader{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(900px 480px at 50% 10%, rgba(255,255,255,.06), rgba(0,0,0,0) 60%),
+    rgba(0,0,0,.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity .35s ease, visibility .35s ease;
+}
+.preloader.hide{opacity:0;visibility:hidden;pointer-events:none}
+
+.preloader-inner{
+  width:min(520px, 92vw);
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:18px 18px;
+  border-radius:14px;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow: 0 18px 60px rgba(0,0,0,.45);
+}
+
+.preloader-plane{
+  width:54px;height:54px;
+  border-radius:12px;
+  display:grid;place-items:center;
+  position:relative;
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+  overflow:hidden;
+}
+.preloader-plane::before{
+  content:"✈";
+  font-size:30px;
+  transform:translateY(1px);
+  opacity:.95;
+}
+.preloader-plane::after{
+  content:"";
+  position:absolute; inset:-60%;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 35%, rgba(255,255,255,.22) 50%, rgba(255,255,255,0) 65%);
+  transform: rotate(20deg);
+  animation: preShine 1.25s linear infinite;
+  pointer-events:none;
+}
+@keyframes preShine{ to{ transform: translateX(160%) rotate(20deg);} }
+
+.preloader-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.preloader-title{
+  font-weight:950;
+  letter-spacing:1.2px;
+  font-size:18px;
+  color: var(--flapText, #fff);
+  text-transform:uppercase;
+}
+.preloader-sub{
+  font-size:13px;
+  opacity:.78;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  color: rgba(255,255,255,.88);
+}
+
+.preloader-dots{
+  margin-left:auto;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.preloader-dots span{
+  width:7px;height:7px;border-radius:50%;
+  background: rgba(255,255,255,.75);
+  animation: preDot 1s ease-in-out infinite;
+}
+.preloader-dots span:nth-child(2){animation-delay:.15s}
+.preloader-dots span:nth-child(3){animation-delay:.30s}
+@keyframes preDot{
+  0%,100%{transform:translateY(0);opacity:.35}
+  50%{transform:translateY(-6px);opacity:1}
+}
+
+@media (prefers-color-scheme: light){
+  .preloader{
+    background:
+      radial-gradient(900px 480px at 50% 10%, rgba(0,0,0,.06), rgba(0,0,0,0) 60%),
+      rgba(255,255,255,.70);
+  }
+  .preloader-inner{background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.10)}
+  .preloader-sub{color: rgba(0,0,0,.72)}
+  .preloader-dots span{background: rgba(0,0,0,.55)}
+}
+
