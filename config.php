@@ -1,6 +1,6 @@
 <?php
 $config = [
-    'dump1090_base' => 'http://127.0.0.1/skyaware',			/* Dump1090 base URL */
+    'dump1090_base' => 'http://localhost/skyaware',			/* Dump1090 base URL */
     'airport' => [
         'name' => 'Frankfurt Main Airport | EDDF',			/* Airport name */
         'lat' => 50.0333,									/* Airport latitude */
@@ -16,6 +16,7 @@ $config = [
     'max_rows' => 8,										/* Max rows */
     'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */
     'state_ttl_s' => 600,									/* State TTL (seconds) */
+    'admin_password' => 'changeme',							/* Admin password */
 	'status' => [
 		'enable' => true,
 		'influence_lists' => true,							/* If true, LANDING/LANDED are forced into arrivals, TAKE OFF into departures */
