@@ -291,7 +291,7 @@ tr.row-exit{animation: rowOut 260ms ease-in forwards}
     transform: translateZ(0);
   }
   .flap .top,.flap .flipTop{
-    top:-2px; height:100%;
+    top:-1px; height:100%;
     align-items:flex-end;
   }
   .flap .bot,.flap .flipBot{
