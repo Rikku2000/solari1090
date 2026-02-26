@@ -291,11 +291,11 @@ tr.row-exit{animation: rowOut 260ms ease-in forwards}
     transform: translateZ(0);
   }
   .flap .top,.flap .flipTop{
-    top:0px; height:100%;
+    top:-2px; height:100%;
     align-items:flex-end;
   }
   .flap .bot,.flap .flipBot{
-    bottom:0px; height:100%;
+    bottom:-2px; height:100%;
     align-items:flex-start;
   }
   .flap .flipTop{ transform-origin: 50% 100%; }
