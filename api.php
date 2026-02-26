@@ -39,11 +39,37 @@ function safe_str(?string $s): string { return trim($s ?? ''); }
 function airline_codes_from_flight(string $flight): array {
     $f = strtoupper(trim($flight));
     if ($f === '') return ['iata' => '', 'icao' => ''];
-    if (!preg_match('/^([A-Z]{2,3})/', $f, $m)) return ['iata' => '', 'icao' => ''];
+
+    if (!preg_match('/^([A-Z]{2,3})/', $f, $m))
+        return ['iata' => '', 'icao' => ''];
+
     $p = $m[1];
+
+    static $icao_to_iata = [
+        'DLH' => 'LH',
+        'BAW' => 'BA',
+        'AFR' => 'AF',
+        'KLM' => 'KL',
+        'AAL' => 'AA',
+        'DAL' => 'DL',
+        'UAE' => 'EK',
+        'QTR' => 'QR',
+        'SWR' => 'LX',
+        'EZY' => 'U2',
+        'RYR' => 'FR',
+        'THY' => 'TK',
+    ];
+
+    if (strlen($p) === 3) {
+        return [
+            'iata' => $icao_to_iata[$p] ?? '',
+            'icao' => $p
+        ];
+    }
+
     return [
-        'iata' => (strlen($p) >= 2) ? substr($p, 0, 2) : '',
-        'icao' => (strlen($p) >= 3) ? substr($p, 0, 3) : '',
+        'iata' => $p,
+        'icao' => ''
     ];
 }
 
