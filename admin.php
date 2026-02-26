@@ -61,7 +61,7 @@ function write_config_file(array $cfg, string $path): bool {
     $airport = $cfg['airport'] ?? ['name'=>'','lat'=>0,'lon'=>0];
     $status  = $cfg['status']  ?? [];
 
-    $php = "<?php";
+    $php = "<?php ";
     $php .= "\$config = [";
     $php .= "    'dump1090_base' => " . var_export((string)($cfg['dump1090_base'] ?? ''), true) . ",			/* Dump1090 base URL */";
     $php .= "    'airport' => [";
@@ -96,7 +96,7 @@ function write_config_file(array $cfg, string $path): bool {
     $php .= "		'down_fpm' => " . (int)($status['down_fpm'] ?? 100) . ",								/* Minimum descent rate to call LANDING */";
     $php .= "	],";
     $php .= "];";
-    $php .= "?>";
+    $php .= " ?>";
 
     $tmp = $path . '.tmp';
     if (file_put_contents($tmp, $php) === false) return false;
