@@ -36,6 +36,36 @@ function write_state(string $file, array $state): void {
 function now(): int { return time(); }
 function safe_str(?string $s): string { return trim($s ?? ''); }
 
+function load_icao_to_iata_map(string $datFile): array {
+    static $map = null;
+    if ($map !== null) return $map;
+
+    if (!is_readable($datFile)) {
+        throw new RuntimeException("airlines.dat not readable: {$datFile}");
+    }
+
+    $map = [];
+
+    $fh = fopen($datFile, 'r');
+    if (!$fh) {
+        throw new RuntimeException("Failed to open airlines.dat");
+    }
+
+    while (($row = fgetcsv($fh)) !== false) {
+        $iata = strtoupper(trim($row[3] ?? ''));
+        $icao = strtoupper(trim($row[4] ?? ''));
+
+        if ($icao !== '' && $icao !== '\\N' &&
+            $iata !== '' && $iata !== '\\N') {
+            $map[$icao] = $iata;
+        }
+    }
+
+    fclose($fh);
+
+    return $map;
+}
+
 function airline_codes_from_flight(string $flight): array {
     $f = strtoupper(trim($flight));
     if ($f === '') return ['iata' => '', 'icao' => ''];
@@ -45,174 +75,7 @@ function airline_codes_from_flight(string $flight): array {
 
     $p = $m[1];
 
-    static $icao_to_iata = [
-		'AAA' => 'AA',
-		'AAB' => 'AB',
-		'AAL' => 'AA',
-		'AAR' => 'OZ',
-		'ACA' => 'AC',
-		'ADB' => 'IZ',
-		'ADH' => 'JP',
-		'AEA' => 'UX',
-		'AEE' => 'A3',
-		'AFL' => 'SU',
-		'AFR' => 'AF',
-		'AHY' => 'J2',
-		'AIC' => 'AI',
-		'AIR' => 'AI',
-		'AIZ' => '4O',
-		'AJL' => 'AJ',
-		'ALK' => 'UL',
-		'AMX' => 'AM',
-		'ANA' => 'NH',
-		'ANE' => 'YW',
-		'ASA' => 'AS',
-		'ASL' => '5O',
-		'ASQ' => '4N',
-		'AUA' => 'OS',
-		'AUI' => 'PS',
-		'AVA' => 'AV',
-		'AWQ' => 'Z2',
-		'AXB' => 'NX',
-		'AXM' => 'MF',
-		'AXY' => '3X',
-		'AZA' => 'AZ',
-		'AZG' => 'M4',
-		'AZU' => 'AD',
-		'BAW' => 'BA',
-		'BBC' => 'BG',
-		'BCS' => 'BA',
-		'BEL' => 'SN',
-		'BER' => 'B2',
-		'BEE' => 'BE',
-		'BLA' => 'FB',
-		'BLX' => '6B',
-		'BMA' => 'MB',
-		'BMR' => 'BM',
-		'BPA' => 'BP',
-		'BRT' => 'BT',
-		'BSK' => '4T',
-		'BTI' => 'BT',
-		'CAL' => 'CI',
-		'CCA' => 'CA',
-		'CES' => 'MU',
-		'CFG' => 'DE',
-		'CHH' => 'HU',
-		'CHQ' => 'FJ',
-		'CPA' => 'CX',
-		'CPZ' => '5Z',
-		'CSC' => 'SC',
-		'CSN' => 'CZ',
-		'CTM' => '7T',
-		'CVA' => 'CV',
-		'CWG' => 'W6',
-		'CXA' => 'XR',
-		'CYZ' => 'CY',
-		'DAL' => 'DL',
-		'DLH' => 'LH',
-		'DLA' => 'EN',
-		'DWI' => '8Q',
-		'EAF' => 'EI',
-		'EAL' => 'EA',
-		'EIN' => 'EI',
-		'EJU' => 'U2',
-		'EK'  => 'EK',
-		'ELY' => 'LY',
-		'EMC' => '9E',
-		'ETD' => 'EY',
-		'ETH' => 'ET',
-		'EVA' => 'BR',
-		'EWG' => 'EW',
-		'EZY' => 'U2',
-		'FDB' => 'FZ',
-		'FDX' => 'FX',
-		'FFT' => 'F9',
-		'FIN' => 'AY',
-		'FJI' => 'FJ',
-		'FLE' => 'W2',
-		'GFA' => 'GF',
-		'GIA' => 'GA',
-		'GLO' => 'G3',
-		'GOW' => 'G7',
-		'GTI' => '5Y',
-		'GWI' => '4U',
-		'HDA' => 'HO',
-		'HKE' => 'UO',
-		'HOP' => 'A5',
-		'IBE' => 'IB',
-		'IBK' => 'EO',
-		'ICE' => 'FI',
-		'IGO' => '6E',
-		'ISR' => '6H',
-		'ISS' => 'T4',
-		'ITY' => 'AZ',
-		'JAL' => 'JL',
-		'JBA' => 'BG',
-		'JBU' => 'B6',
-		'JIA' => 'XE',
-		'JST' => '3K',
-		'KAL' => 'KE',
-		'KLM' => 'KL',
-		'KZR' => 'KC',
-		'LAN' => 'LA',
-		'LNI' => 'JT',
-		'LOT' => 'LO',
-		'LPE' => 'LP',
-		'LTU' => 'LT',
-		'LVG' => 'LV',
-		'MAH' => 'MA',
-		'MAS' => 'MH',
-		'MEA' => 'ME',
-		'MGL' => 'X3',
-		'MSR' => 'MS',
-		'NAX' => 'DY',
-		'NKS' => 'NK',
-		'NLY' => 'XY',
-		'NMB' => 'NM',
-		'NVR' => 'NO',
-		'OAL' => 'OA',
-		'OHY' => '8Q',
-		'OKA' => 'BK',
-		'OMA' => 'WY',
-		'OZR' => 'PC',
-		'PAL' => 'PR',
-		'PIA' => 'PK',
-		'QFA' => 'QF',
-		'QTR' => 'QR',
-		'RAM' => 'AT',
-		'RBA' => 'BI',
-		'RYR' => 'FR',
-		'SAS' => 'SK',
-		'SBI' => 'S7',
-		'SDA' => 'SV',
-		'SFR' => 'FA',
-		'SIA' => 'SQ',
-		'SLM' => 'SZ',
-		'SQC' => 'SV',
-		'SWA' => 'WN',
-		'SWR' => 'LX',
-		'TAP' => 'TP',
-		'TAR' => 'TU',
-		'TAY' => '3V',
-		'TFL' => 'OR',
-		'THA' => 'TG',
-		'TOM' => 'BY',
-		'TSC' => 'TS',
-		'TUI' => 'X3',
-		'TWB' => 'TW',
-		'UAE' => 'EK',
-		'UAL' => 'UA',
-		'UIA' => 'PS',
-		'UPS' => '5X',
-		'VIR' => 'VS',
-		'VLG' => 'VY',
-		'VOZ' => 'VA',
-		'WJA' => 'WS',
-		'WZZ' => 'W6',
-		'XAX' => 'XK',
-		'XLK' => 'SE',
-		'ZAL' => 'ZO',
-    ];
+    $icao_to_iata = load_icao_to_iata_map(__DIR__ . '/airlines.dat');
 
     if (strlen($p) === 3) {
         return [
