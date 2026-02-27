@@ -110,6 +110,12 @@ td.airline {
   filter: drop-shadow(0 1px 0 rgba(0,0,0,.6));
 }
 
+td.airline{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .col-right{text-align:right}
 .flight{font-weight:800}
 .icao,.airlineCode{color:#2b5f86;font-weight:700;letter-spacing:.5px}

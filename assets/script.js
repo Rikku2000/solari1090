@@ -133,7 +133,6 @@ const PAD = {
   time: 5,
   airline: 3,
   flight: 8,
-  iata: 3,
   alt: 5,
   dist: 5,
   gs: 4,
@@ -142,7 +141,7 @@ const PAD = {
 
 const tbody = document.getElementById('rows');
 
-function makeAirlineLogoTd(){
+function makeAirlineLogoTd(initial='—', padTo=null, extraLineClass=null){
   const td = document.createElement('td');
   td.className = 'airline';
 
@@ -152,15 +151,17 @@ function makeAirlineLogoTd(){
   img.loading = 'lazy';
 
   img.onerror = () => {
-    if (!img.dataset.fallback) {
-      img.dataset.fallback = "1";
-      img.src = "assets/empty.png";
-    } else {
-      img.src = "assets/empty.png";
-    }
+    img.src = "assets/empty.png";
   };
 
+  const span = document.createElement('span');
+  initFlapLine(span, String(initial));
+
   td.appendChild(img);
+  if (extraLineClass) span.classList.add(extraLineClass);
+  td.appendChild(span);
+
+  td.dataset.padTo = padTo != null ? String(padTo) : '';
   return td;
 }
 
@@ -189,15 +190,14 @@ function buildRow(r){
   tr.dataset.key = safe(r.icao);
 
   const tdTime   = makeFlapTd('time',  '—', PAD.time);
-  const tdAir    = makeAirlineLogoTd();
+  const tdAir    = makeAirlineLogoTd('—', PAD.iata, 'iata');
   const tdFlight = makeFlapTd('flight','—', PAD.flight);
-  const tdIata   = makeFlapTd('iata',  '—', PAD.iata, 'iata');
   const tdAlt    = makeFlapTd('col-right','—', PAD.alt);
   const tdDist   = makeFlapTd('col-right','—', PAD.dist);
   const tdGs     = makeFlapTd('col-right','—', PAD.gs);
   const tdRemark = makeFlapTd('col-right','—', PAD.remark);
 
-  tr.append(tdTime, tdAir, tdFlight, tdIata, tdAlt, tdDist, tdGs, tdRemark);
+  tr.append(tdTime, tdAir, tdFlight, tdAlt, tdDist, tdGs, tdRemark);
   updateRow(tr, r);
   return tr;
 }
@@ -208,12 +208,12 @@ function updateRow(tr, r){
   const timeTxt = r.last_seen_epoch ? hhmm(r.last_seen_epoch) : '—';
   const airline = guessIata(r);
   const flight  = safe(r.flight).toUpperCase();
-  const iata    = airline;
 
   setTd(tds[0], timeTxt, { delay: 0 * COL_STAGGER });
 
   const tdAir = tds[1];
   const img = tdAir.querySelector('img.airline-logo');
+
   if (airline && airline !== '—') {
     img.style.display = '';
     img.alt = airline;
@@ -224,22 +224,23 @@ function updateRow(tr, r){
     img.src = `assets/empty.png`;
   }
 
-  setTd(tds[2], flight,        { delay: 1 * COL_STAGGER });
-  setTd(tds[3], iata,          { delay: 2 * COL_STAGGER });
-  setTd(tds[4], fmt(r.alt_ft), { delay: 3 * COL_STAGGER });
-  setTd(tds[5], fmt(r.dist_km),{ delay: 4 * COL_STAGGER });
-  setTd(tds[6], fmt(r.gs_kt),  { delay: 5 * COL_STAGGER });
+  setTd(tdAir, airline, { delay: 1 * COL_STAGGER });
+
+  setTd(tds[2], flight,        { delay: 2 * COL_STAGGER });
+  setTd(tds[3], fmt(r.alt_ft), { delay: 3 * COL_STAGGER });
+  setTd(tds[4], fmt(r.dist_km),{ delay: 4 * COL_STAGGER });
+  setTd(tds[5], fmt(r.gs_kt),  { delay: 5 * COL_STAGGER });
 
   const rem = remarkFor(r);
   const cls = (rem.cls === 'good' || rem.cls === 'warn' || rem.cls === 'bad') ? rem.cls : null;
-  setTd(tds[7], rem.txt, { cls, delay: 6 * COL_STAGGER });
+  setTd(tds[6], rem.txt, { cls, delay: 6 * COL_STAGGER });
 }
 
 function showEmpty(){
   tbody.innerHTML = '';
   const tr = document.createElement('tr');
   const td = document.createElement('td');
-  td.colSpan = 8;
+  td.colSpan = 7;
   td.style.padding = '16px 10px';
   td.style.color = 'rgba(207,207,207,.55)';
   td.style.fontWeight = '600';
@@ -256,6 +257,7 @@ async function refresh(forceRebuild=false){
     if (!data.ok) throw new Error(data.error || 'API error');
 
     document.getElementById('airportName').textContent = data.airport || 'Airport';
+	document.title = data.airport || 'Airport';
 
     const d = new Date(data.updated_epoch * 1000);
     document.getElementById('meta').textContent =

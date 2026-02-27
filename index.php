@@ -5,7 +5,7 @@
 			<title>Solari1090</title>
 			<meta charset="utf-8">
 			<meta name="viewport" content="width=device-width,initial-scale=1">
-			<link rel="stylesheet" href="assets/style2.css">
+			<link rel="stylesheet" href="assets/style3.css">
 		</head>
 		<body>
 			<div id="preloader" class="preloader" role="status" aria-label="Loading">
@@ -42,7 +42,6 @@
 						<th>Time</th>
 						<th>Airline</th>
 						<th>Flight</th>
-						<th>ICAO</th>
 						<th class="col-right">Alt (ft)</th>
 						<th class="col-right">Dist (km)</th>
 						<th class="col-right">GS (kt)</th>
