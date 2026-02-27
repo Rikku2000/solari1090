@@ -284,11 +284,11 @@ td.airline {
 }
 
 .flap .top,.flap .flipTop{
-  top:1px; height:100%;
+  top:-1px; height:100%;
   align-items:flex-end;
 }
 .flap .bot,.flap .flipBot{
-  bottom:1px; height:100%;
+  bottom:0px; height:100%;
   align-items:flex-start;
 }
 
@@ -357,11 +357,11 @@ td.airline {
     transform: translateZ(0);
   }
   .flap .top,.flap .flipTop{
-    top:-1px; height:100%;
+    top:-3px; height:100%;
     align-items:flex-end;
   }
   .flap .bot,.flap .flipBot{
-    bottom:-1px; height:100%;
+    bottom:-2px; height:100%;
     align-items:flex-start;
   }
   .flap .flipTop{ transform-origin: 50% 100%; }
