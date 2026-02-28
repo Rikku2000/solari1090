@@ -5,7 +5,7 @@
 			<title>Solari1090</title>
 			<meta charset="utf-8">
 			<meta name="viewport" content="width=device-width,initial-scale=1">
-			<link rel="stylesheet" href="assets/style3.css">
+			<link rel="stylesheet" href="assets/style1.css">
 		</head>
 		<body>
 			<div id="preloader" class="preloader" role="status" aria-label="Loading">

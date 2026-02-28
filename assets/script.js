@@ -131,7 +131,7 @@ function remarkFor(row){
 
 const PAD = {
   time: 5,
-  airline: 3,
+  airline: 2,
   flight: 8,
   alt: 5,
   dist: 5,
@@ -190,7 +190,7 @@ function buildRow(r){
   tr.dataset.key = safe(r.icao);
 
   const tdTime   = makeFlapTd('time',  '—', PAD.time);
-  const tdAir    = makeAirlineLogoTd('—', PAD.iata, 'iata');
+  const tdAir    = makeAirlineLogoTd('—', PAD.airline, 'iata');
   const tdFlight = makeFlapTd('flight','—', PAD.flight);
   const tdAlt    = makeFlapTd('col-right','—', PAD.alt);
   const tdDist   = makeFlapTd('col-right','—', PAD.dist);

@@ -249,6 +249,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
                   <input class="adminInput" id="airport_lon" name="airport_lon" value="<?php echo h((string)($config['airport']['lon'] ?? '')); ?>">
                 </div>
               </div>
+              <label class="adminLabel" for="airport_search">Search</label>
+              <input class="adminInput" id="airport_search" placeholder="Type name / city / IATA / ICAO (e.g. Berlin, TXL, EDDB)">
+              <select class="adminInput" id="airport_select" size="6" style="height:auto;"></select>
             </div>
             <div class="adminSection">
               <div class="adminSectionTitle">Board</div>
@@ -337,5 +340,157 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
       <?php endif; ?>
     </div>
   </div>
+
+<script>
+(function(){
+  const searchEl = document.getElementById('airport_search');
+  const selectEl = document.getElementById('airport_select');
+  const nameEl = document.getElementById('airport_name');
+  const latEl  = document.getElementById('airport_lat');
+  const lonEl  = document.getElementById('airport_lon');
+  if(!searchEl || !selectEl || !nameEl || !latEl || !lonEl) return;
+
+  let airports = null;
+  let loading = false;
+
+  function parseCsvLine(line){
+    const out = [];
+    let cur = '';
+    let inQ = false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(inQ){
+        if(ch === '"'){
+          if(line[i+1] === '"'){ cur += '"'; i++; }
+          else { inQ = false; }
+        } else {
+          cur += ch;
+        }
+      } else {
+        if(ch === '"'){ inQ = true; }
+        else if(ch === ','){ out.push(cur); cur=''; }
+        else { cur += ch; }
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function normalize(s){ return (s || '').toString().toLowerCase(); }
+
+  function parseAirports(text){
+    const t = (text || '').trim();
+    if(!t) return [];
+    if(t[0] === '['){
+      try {
+        const arr = JSON.parse(t);
+        return (arr || []).map(a => ({
+          name: a.name || '',
+          city: a.city || '',
+          country: a.country || '',
+          iata: a.code || '',
+          icao: a.icao || '',
+          lat: a.lat || '',
+          lon: a.lon || ''
+        })).filter(a => a.name && a.lat && a.lon);
+      } catch(e){
+        return [];
+      }
+    }
+    const arr = [];
+    for(const line0 of t.split(/\r?\n/)){
+      const line = line0.trim();
+      if(!line) continue;
+      const cols = parseCsvLine(line);
+      if(cols.length < 9) continue;
+      const name = cols[1] || '';
+      const city = cols[2] || '';
+      const country = cols[3] || '';
+      const iata = cols[4] === '\\N' ? '' : cols[4];
+      const icao = cols[5] === '\\N' ? '' : cols[5];
+      const lat = cols[6];
+      const lon = cols[7];
+      if(!name || !lat || !lon) continue;
+      arr.push({name, city, country, iata, icao, lat, lon});
+    }
+    return arr;
+  }
+
+  async function loadAirports(){
+    if(airports || loading) return airports;
+    loading = true;
+    selectEl.innerHTML = '<option>Loading airports…</option>';
+    try{
+      const resp = await fetch('airports.dat', {cache:'no-cache'});
+      const text = await resp.text();
+      airports = parseAirports(text);
+    }catch(e){
+      airports = [];
+    }finally{
+      loading = false;
+    }
+    return airports;
+  }
+
+  function renderResults(list){
+    selectEl.innerHTML = '';
+    if(!list.length){
+      const opt = document.createElement('option');
+      opt.textContent = 'No matches';
+      opt.disabled = true;
+      selectEl.appendChild(opt);
+      return;
+    }
+    for(const a of list){
+      const opt = document.createElement('option');
+      const codes = [a.iata, a.icao].filter(Boolean).join(' / ');
+      const where = [a.city, a.country].filter(Boolean).join(', ');
+      opt.textContent = `${a.name}${codes ? ' ('+codes+')' : ''}${where ? ' — '+where : ''}`;
+      opt.value = JSON.stringify(a);
+      selectEl.appendChild(opt);
+    }
+  }
+
+  function doSearch(){
+    const q = normalize(searchEl.value).trim();
+    if(!airports){
+      renderResults([]);
+      return;
+    }
+    if(q.length < 2){
+      renderResults([]);
+      return;
+    }
+    const res = [];
+    for(const a of airports){
+      const hay = normalize([a.name,a.city,a.country,a.iata,a.icao].join(' '));
+      if(hay.includes(q)) res.push(a);
+      if(res.length >= 30) break;
+    }
+    renderResults(res);
+  }
+
+  selectEl.addEventListener('change', () => {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    if(!opt || !opt.value) return;
+    try{
+      const a = JSON.parse(opt.value);
+      nameEl.value = a.name || '';
+      latEl.value = a.lat || '';
+      lonEl.value = a.lon || '';
+    }catch(e){}
+  });
+
+  searchEl.addEventListener('input', () => {
+    if(!airports){
+      loadAirports().then(() => doSearch());
+    } else {
+      doSearch();
+    }
+  });
+
+})();
+</script>
+
 </body>
 </html>
