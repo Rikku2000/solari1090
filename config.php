@@ -14,6 +14,13 @@ $config = [
     'arrival_trend_fpm' => -300,							/* Arrival trend (fpm) */
     'depart_trend_fpm' =>  300,								/* Depart trend (fpm) */
     'max_rows' => 8,										/* Max rows */
+    'columns' => [											/* Toggle optional columns */
+        'from' => true,
+        'to' => true,
+        'alt_ft' => true,
+        'dist_km' => true,
+        'gs_kt' => true,
+    ],								
     'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */
     'state_ttl_s' => 600,									/* State TTL (seconds) */
     'admin_password' => 'changeme',							/* Admin password */

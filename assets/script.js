@@ -1,5 +1,18 @@
 let MODE = 'departures';
 
+const DEFAULT_COLUMNS = { from:true, to:true, alt_ft:true, dist_km:true, gs_kt:true };
+const COLUMNS = Object.assign({}, DEFAULT_COLUMNS, (window.SOLARI_COLUMNS || {}));
+function isColOn(k){ return !!COLUMNS[k]; }
+function visibleColCount(){
+  let n = 4;
+  if (isColOn('from')) n++;
+  if (isColOn('to')) n++;
+  if (isColOn('alt_ft')) n++;
+  if (isColOn('dist_km')) n++;
+  if (isColOn('gs_kt')) n++;
+  return n;
+}
+
 const FLIP_DURATION = 360;
 const FLIP_STAGGER  = 45;
 const COL_STAGGER   = 110;
@@ -133,6 +146,8 @@ const PAD = {
   time: 5,
   airline: 2,
   flight: 8,
+  from: 3,
+  to: 3,
   alt: 5,
   dist: 5,
   gs: 4,
@@ -141,9 +156,10 @@ const PAD = {
 
 const tbody = document.getElementById('rows');
 
-function makeAirlineLogoTd(initial='—', padTo=null, extraLineClass=null){
+function makeAirlineLogoTd(colKey, initial='—', padTo=null, extraLineClass=null){
   const td = document.createElement('td');
   td.className = 'airline';
+  if (colKey) td.dataset.col = colKey;
 
   const img = document.createElement('img');
   img.className = 'airline-logo';
@@ -165,9 +181,10 @@ function makeAirlineLogoTd(initial='—', padTo=null, extraLineClass=null){
   return td;
 }
 
-function makeFlapTd(className, initial='—', padTo=null, extraLineClass=null){
+function makeFlapTd(colKey, className, initial='—', padTo=null, extraLineClass=null){
   const td = document.createElement('td');
   if (className) td.className = className;
+  if (colKey) td.dataset.col = colKey;
 
   const span = document.createElement('span');
   initFlapLine(span, String(initial));
@@ -189,58 +206,68 @@ function buildRow(r){
   const tr = document.createElement('tr');
   tr.dataset.key = safe(r.icao);
 
-  const tdTime   = makeFlapTd('time',  '—', PAD.time);
-  const tdAir    = makeAirlineLogoTd('—', PAD.airline, 'iata');
-  const tdFlight = makeFlapTd('flight','—', PAD.flight);
-  const tdAlt    = makeFlapTd('col-right','—', PAD.alt);
-  const tdDist   = makeFlapTd('col-right','—', PAD.dist);
-  const tdGs     = makeFlapTd('col-right','—', PAD.gs);
-  const tdRemark = makeFlapTd('col-right','—', PAD.remark);
+  tr.append(
+    makeFlapTd('time',  'time',  '—', PAD.time),
+    makeAirlineLogoTd('airline', '—', PAD.airline, 'iata'),
+    makeFlapTd('flight','flight','—', PAD.flight)
+  );
 
-  tr.append(tdTime, tdAir, tdFlight, tdAlt, tdDist, tdGs, tdRemark);
+  if (isColOn('from'))    tr.append(makeFlapTd('from', 'from', '—', PAD.from));
+  if (isColOn('to'))      tr.append(makeFlapTd('to', 'to', '—', PAD.to));
+  if (isColOn('alt_ft'))  tr.append(makeFlapTd('alt_ft', 'col-right', '—', PAD.alt));
+  if (isColOn('dist_km')) tr.append(makeFlapTd('dist_km','col-right', '—', PAD.dist));
+  if (isColOn('gs_kt'))   tr.append(makeFlapTd('gs_kt', 'col-right', '—', PAD.gs));
+
+  tr.append(makeFlapTd('remark','col-right','—', PAD.remark));
+
   updateRow(tr, r);
   return tr;
 }
 
 function updateRow(tr, r){
-  const tds = tr.children;
+  function td(col){ return tr.querySelector(`td[data-col="${col}"]`); }
 
   const timeTxt = r.last_seen_epoch ? hhmm(r.last_seen_epoch) : '—';
   const airline = guessIata(r);
   const flight  = safe(r.flight).toUpperCase();
+  const from    = safe(r.from).toUpperCase();
+  const to      = safe(r.to).toUpperCase();
 
-  setTd(tds[0], timeTxt, { delay: 0 * COL_STAGGER });
+  setTd(td('time'), timeTxt, { delay: 0 * COL_STAGGER });
 
-  const tdAir = tds[1];
-  const img = tdAir.querySelector('img.airline-logo');
-
-  if (airline && airline !== '—') {
-    img.style.display = '';
-    img.alt = airline;
-    img.src = `assets/icon/${airline}.png`;
-  } else {
-    img.style.display = '';
-    img.alt = airline;
-    img.src = `assets/empty.png`;
+  const tdAir = td('airline');
+  if (tdAir){
+    const img = tdAir.querySelector('img.airline-logo');
+    if (airline && airline !== '—') {
+      img.style.display = '';
+      img.alt = airline;
+      img.src = `assets/icon/${airline}.png`;
+    } else {
+      img.style.display = '';
+      img.alt = airline;
+      img.src = `assets/empty.png`;
+    }
+    setTd(tdAir, airline, { delay: 1 * COL_STAGGER });
   }
 
-  setTd(tdAir, airline, { delay: 1 * COL_STAGGER });
+  setTd(td('flight'), flight, { delay: 2 * COL_STAGGER });
 
-  setTd(tds[2], flight,        { delay: 2 * COL_STAGGER });
-  setTd(tds[3], fmt(r.alt_ft), { delay: 3 * COL_STAGGER });
-  setTd(tds[4], fmt(r.dist_km),{ delay: 4 * COL_STAGGER });
-  setTd(tds[5], fmt(r.gs_kt),  { delay: 5 * COL_STAGGER });
+  if (isColOn('from'))    setTd(td('from'), from, { delay: 2 * COL_STAGGER });
+  if (isColOn('to'))      setTd(td('to'), to, { delay: 2 * COL_STAGGER });
+  if (isColOn('alt_ft'))  setTd(td('alt_ft'), fmt(r.alt_ft), { delay: 3 * COL_STAGGER });
+  if (isColOn('dist_km')) setTd(td('dist_km'), fmt(r.dist_km), { delay: 4 * COL_STAGGER });
+  if (isColOn('gs_kt'))   setTd(td('gs_kt'), fmt(r.gs_kt), { delay: 5 * COL_STAGGER });
 
   const rem = remarkFor(r);
   const cls = (rem.cls === 'good' || rem.cls === 'warn' || rem.cls === 'bad') ? rem.cls : null;
-  setTd(tds[6], rem.txt, { cls, delay: 6 * COL_STAGGER });
+  setTd(td('remark'), rem.txt, { cls, delay: 6 * COL_STAGGER });
 }
 
 function showEmpty(){
   tbody.innerHTML = '';
   const tr = document.createElement('tr');
   const td = document.createElement('td');
-  td.colSpan = 7;
+  td.colSpan = visibleColCount();
   td.style.padding = '16px 10px';
   td.style.color = 'rgba(207,207,207,.55)';
   td.style.fontWeight = '600';

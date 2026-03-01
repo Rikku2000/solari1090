@@ -66,6 +66,73 @@ function load_icao_to_iata_map(string $datFile): array {
     return $map;
 }
 
+function load_airports_maps(string $datFile): array {
+    static $maps = null;
+    if ($maps !== null) return $maps;
+
+    if (!is_readable($datFile)) {
+        throw new RuntimeException("airports.dat not readable: {$datFile}");
+    }
+
+    $icaoToIata = [];
+    $iataToIata = [];
+    $fh = fopen($datFile, 'r');
+    if (!$fh) throw new RuntimeException("Failed to open airports.dat");
+
+    while (($row = fgetcsv($fh)) !== false) {
+        $iata = strtoupper(trim($row[4] ?? ''));
+        $icao = strtoupper(trim($row[5] ?? ''));
+
+        if ($icao !== '' && $icao !== '\\N' && $iata !== '' && $iata !== '\\N') {
+            $icaoToIata[$icao] = $iata;
+            $iataToIata[$iata] = $iata;
+        }
+    }
+    fclose($fh);
+
+    $maps = ['icao_to_iata' => $icaoToIata, 'iata_to_iata' => $iataToIata];
+    return $maps;
+}
+
+function load_flight_routes(string $jsonFile): array {
+    static $map = null;
+    if ($map !== null) return $map;
+
+    if (!is_readable($jsonFile)) {
+        $map = [];
+        return $map;
+    }
+
+    $raw = @file_get_contents($jsonFile);
+    $data = json_decode($raw ?: '[]', true);
+    $map = [];
+
+    if (is_array($data)) {
+        foreach ($data as $row) {
+            if (!is_array($row) || count($row) < 3) continue;
+            $flight = strtoupper(trim((string)$row[0]));
+            $from   = strtoupper(trim((string)$row[1]));
+            $to     = strtoupper(trim((string)$row[2]));
+            if ($flight !== '' && $from !== '' && $to !== '') {
+                $map[$flight] = [$from, $to];
+            }
+        }
+    }
+
+    return $map;
+}
+
+function guess_airport_icao_from_name(string $name): string {
+    if (preg_match('/\b([A-Z0-9]{4})\b/', strtoupper($name), $m)) return $m[1];
+    return '';
+}
+
+function best_code(string $code, array $icaoToIata): string {
+    $c = strtoupper(trim($code));
+    if ($c === '' || $c === '\\N') return '';
+    return $icaoToIata[$c] ?? $c;
+}
+
 function airline_codes_from_flight(string $flight): array {
     $f = strtoupper(trim($flight));
     if ($f === '') return ['iata' => '', 'icao' => ''];
@@ -116,6 +183,20 @@ foreach ($state as $icao => $rec) {
 $airportLat = (float)$config['airport']['lat'];
 $airportLon = (float)$config['airport']['lon'];
 
+$airportsMaps = load_airports_maps(__DIR__ . '/airports.dat');
+$icaoToIata = $airportsMaps['icao_to_iata'];
+
+$airportIcao = strtoupper((string)($config['airport']['icao'] ?? ''));
+if ($airportIcao === '') $airportIcao = guess_airport_icao_from_name((string)($config['airport']['name'] ?? ''));
+
+$airportIata = strtoupper((string)($config['airport']['iata'] ?? ''));
+if ($airportIata === '' && $airportIcao !== '') {
+    $airportIata = $icaoToIata[$airportIcao] ?? '';
+}
+if ($airportIata === '') $airportIata = $airportIcao;
+
+$flightRoutes = load_flight_routes(__DIR__ . '/flights.dat');
+
 $arrivals = [];
 $departures = [];
 
@@ -156,7 +237,6 @@ foreach ($payload['aircraft'] as $a) {
     } else {
         $curDistKm = null;
     }
-
 
     $trimBefore = $t - max(10, $config['trend_window_s'] + 10);
     $hist2 = [];
@@ -220,8 +300,20 @@ foreach ($payload['aircraft'] as $a) {
 		}
     }
 
+    $fkey = strtoupper(trim($flight));
+    $route = $flightRoutes[$fkey] ?? null;
+
+    $origCode = '';
+    $destCode = '';
+    if (is_array($route) && count($route) >= 2) {
+        $origCode = best_code((string)$route[0], $icaoToIata);
+        $destCode = best_code((string)$route[1], $icaoToIata);
+    }
+
     $row = [
         'flight'    => $flight,
+        'from'      => '',
+        'to'        => '',
         'icao'      => strtoupper($icao),
         'alt_ft'    => $alt,
         'dist_km'   => round($dist, 1),
@@ -242,6 +334,23 @@ foreach ($payload['aircraft'] as $a) {
         } elseif ($statusTxt === 'LANDING' || $statusTxt === 'LANDED') {
             $bucket = 'arrivals';
         }
+    }
+
+    $dirEff = $bucket;
+    if ($dirEff === null) {
+        if ($trendFpm !== null && $trendFpm <= $config['arrival_trend_fpm']) $dirEff = 'arrivals';
+        elseif ($trendFpm !== null && $trendFpm >= $config['depart_trend_fpm']) $dirEff = 'departures';
+    }
+
+    if ($dirEff === 'arrivals') {
+        $row['from'] = $origCode !== '' ? $origCode : '';
+        $row['to']   = $airportIata;
+    } elseif ($dirEff === 'departures') {
+        $row['from'] = $airportIata;
+        $row['to']   = $destCode !== '' ? $destCode : '';
+    } else {
+        $row['from'] = $origCode;
+        $row['to']   = $destCode;
     }
 
     if ($bucket === 'arrivals') {

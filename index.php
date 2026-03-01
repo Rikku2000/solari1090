@@ -1,4 +1,7 @@
-<?php declare (strict_types = 1); ?>
+<?php declare (strict_types = 1);
+require __DIR__ . '/config.php';
+$cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['columns'] : [];
+?>
 <!doctype html>
 	<html lang="en">
 		<head>
@@ -42,9 +45,11 @@
 						<th>Time</th>
 						<th>Airline</th>
 						<th>Flight</th>
-						<th class="col-right">Alt (ft)</th>
-						<th class="col-right">Dist (km)</th>
-						<th class="col-right">GS (kt)</th>
+						<?php if (!empty($cols['from'])): ?><th>From</th><?php endif; ?>
+						<?php if (!empty($cols['to'])): ?><th>To</th><?php endif; ?>
+						<?php if (!empty($cols['alt_ft'])): ?><th class="col-right">Alt (FT)</th><?php endif; ?>
+						<?php if (!empty($cols['dist_km'])): ?><th class="col-right">Dist (KM)</th><?php endif; ?>
+						<?php if (!empty($cols['gs_kt'])): ?><th class="col-right">GS (KT)</th><?php endif; ?>
 						<th class="col-right">Status</th>
 					</tr>
 				</thead>
@@ -56,6 +61,15 @@
 				<div id="footerLeft">Updated —</div>
 				<div id="footerRight">Solari1090</div>
 			</div>
+			<script>
+				window.SOLARI_COLUMNS = <?php echo json_encode([
+					'from' => !empty($cols['from']),
+					'to' => !empty($cols['to']),
+					'alt_ft' => !empty($cols['alt_ft']),
+					'dist_km' => !empty($cols['dist_km']),
+					'gs_kt' => !empty($cols['gs_kt']),
+				], JSON_UNESCAPED_SLASHES); ?>;
+			</script>
 			<script src="assets/script.js" defer></script>
 			<script>
 				(function(){

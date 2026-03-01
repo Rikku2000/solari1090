@@ -78,6 +78,15 @@ function write_config_file(array $cfg, string $path): bool {
     $php .= "    'depart_trend_fpm' => " . (int)($cfg['depart_trend_fpm'] ?? 0) . ",						/* Depart trend (fpm) */";
     $php .= "    'max_rows' => " . (int)($cfg['max_rows'] ?? 0) . ",								/* Max rows */";
 
+    $cols = $cfg['columns'] ?? [];
+    $php .= "    'columns' => [\t\t\t\t\t\t\t\t\t/* Toggle optional columns */";
+    $php .= "        'from' => " . (!empty($cols['from']) ? 'true' : 'false') . ",";
+    $php .= "        'to' => " . (!empty($cols['to']) ? 'true' : 'false') . ",";
+    $php .= "        'alt_ft' => " . (!empty($cols['alt_ft']) ? 'true' : 'false') . ",";
+    $php .= "        'dist_km' => " . (!empty($cols['dist_km']) ? 'true' : 'false') . ",";
+    $php .= "        'gs_kt' => " . (!empty($cols['gs_kt']) ? 'true' : 'false') . ",";
+    $php .= "    ],";
+
     $php .= "    'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */";
     $php .= "    'state_ttl_s' => " . (int)($cfg['state_ttl_s'] ?? 600) . ",							/* State TTL (seconds) */";
 
@@ -159,6 +168,13 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     $new['depart_trend_fpm']  = int_from_post('depart_trend_fpm', (int)$config['depart_trend_fpm']);
     $new['max_rows']        = int_from_post('max_rows', (int)$config['max_rows']);
     $new['state_ttl_s']     = int_from_post('state_ttl_s', (int)$config['state_ttl_s']);
+
+    if (!isset($new['columns']) || !is_array($new['columns'])) $new['columns'] = [];
+    $new['columns']['from'] = isset($_POST['col_from']);
+    $new['columns']['to'] = isset($_POST['col_to']);
+    $new['columns']['alt_ft'] = isset($_POST['col_alt_ft']);
+    $new['columns']['dist_km'] = isset($_POST['col_dist_km']);
+    $new['columns']['gs_kt'] = isset($_POST['col_gs_kt']);
 
     $pw_new = (string)($_POST['admin_password_new'] ?? '');
     if ($pw_new !== '') {
@@ -297,6 +313,30 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
               </div>
               <label class="adminLabel" for="state_ttl_s">State TTL (s)</label>
               <input class="adminInput" id="state_ttl_s" name="state_ttl_s" value="<?php echo h((string)$config['state_ttl_s']); ?>">
+            </div>
+            <div class="adminSection">
+              <div class="adminSectionTitle">Display</div>
+              <?php $cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['columns'] : []; ?>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_from" <?php echo !empty($cols['from']) ? 'checked' : ''; ?>>
+                <span>Show “From”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_to" <?php echo !empty($cols['to']) ? 'checked' : ''; ?>>
+                <span>Show “To”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_alt_ft" <?php echo !empty($cols['alt_ft']) ? 'checked' : ''; ?>>
+                <span>Show “Alt (FT)”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_dist_km" <?php echo !empty($cols['dist_km']) ? 'checked' : ''; ?>>
+                <span>Show “Dist (KM)”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_gs_kt" <?php echo !empty($cols['gs_kt']) ? 'checked' : ''; ?>>
+                <span>Show “GS (KT)”</span>
+              </label>
             </div>
             <div class="adminSection">
               <div class="adminSectionTitle">Status Labels</div>
@@ -475,7 +515,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     if(!opt || !opt.value) return;
     try{
       const a = JSON.parse(opt.value);
-      nameEl.value = a.name || '';
+      nameEl.value = a.name +' ('+ a.icao +')' || '';
       latEl.value = a.lat || '';
       lonEl.value = a.lon || '';
     }catch(e){}
