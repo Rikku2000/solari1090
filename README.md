@@ -3,6 +3,8 @@
 A lightweight Solari-style (flip-board) arrivals and departures display powered by **dump1090 / SkyAware** ADS-B data.  
 Designed for local receivers to show nearby aircraft in a clean airport-style board.
 
+![Screenshot](screenshot.jpg)
+
 ## Features
 
 - Arrivals and Departures views  
