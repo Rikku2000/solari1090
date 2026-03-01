@@ -327,15 +327,15 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
               </label>
               <label class="adminCheck">
                 <input type="checkbox" name="col_alt_ft" <?php echo !empty($cols['alt_ft']) ? 'checked' : ''; ?>>
-                <span>Show “Alt (FT)”</span>
+                <span>Show “Height (FT)”</span>
               </label>
               <label class="adminCheck">
                 <input type="checkbox" name="col_dist_km" <?php echo !empty($cols['dist_km']) ? 'checked' : ''; ?>>
-                <span>Show “Dist (KM)”</span>
+                <span>Show “Distance (KM)”</span>
               </label>
               <label class="adminCheck">
                 <input type="checkbox" name="col_gs_kt" <?php echo !empty($cols['gs_kt']) ? 'checked' : ''; ?>>
-                <span>Show “GS (KT)”</span>
+                <span>Show “Speed (KT)”</span>
               </label>
             </div>
             <div class="adminSection">
