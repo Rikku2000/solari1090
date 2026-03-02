@@ -1,15 +1,46 @@
 let MODE = 'departures';
+let ICAO2IATA = null;
+async function loadIcaoMap(){
+  try{
+    const res = await fetch('assets/icao2iata.min.json', {cache:'force-cache'});
+    if (!res.ok) return;
+    ICAO2IATA = await res.json();
+  }catch(e){ }
+}
+function toIata(code){
+  const c = (code||'').toString().trim().toUpperCase();
+  if (!c || c==='\\N') return '';
+  if (ICAO2IATA && c.length===4 && ICAO2IATA[c]) return ICAO2IATA[c];
+  return c;
+}
+function hashStr(s){
+  s = (s||'').toString();
+  let h = 2166136261;
+  for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h>>>0);
+}
+function inferGateTerminal(row){
+  const key = row.flight || row.icao || '';
+  const h = hashStr(key);
+  const terminal = row.terminal ? String(row.terminal).toUpperCase() : String.fromCharCode(65 + (h % 4));
+  const gateNum = row.gate ? String(row.gate) : String(1 + (h % 30)).padStart(2,'0');
+  return {terminal, gate: gateNum};
+}
 
-const DEFAULT_COLUMNS = { from:true, to:true, alt_ft:true, dist_km:true, gs_kt:true };
+
+const DEFAULT_COLUMNS = { from:true, to:true, terminal:true, gate:true, alt_ft:true, dist_km:true, gs_kt:true, status:true };
 const COLUMNS = Object.assign({}, DEFAULT_COLUMNS, (window.SOLARI_COLUMNS || {}));
 function isColOn(k){ return !!COLUMNS[k]; }
 function visibleColCount(){
-  let n = 4;
+  let n = 3;
   if (isColOn('from')) n++;
   if (isColOn('to')) n++;
+  if (isColOn('terminal')) n++;
+  if (isColOn('gate')) n++;
   if (isColOn('alt_ft')) n++;
   if (isColOn('dist_km')) n++;
   if (isColOn('gs_kt')) n++;
+  if (isColOn('status')) n++;
   return n;
 }
 
@@ -125,7 +156,7 @@ function guessIata(row){
   return m ? m[1] : '—';
 }
 
-function remarkFor(row){
+function statusFor(row){
   if (row && typeof row.status === 'string' && row.status.trim().length){
     const txt = row.status.trim().toUpperCase();
     const cls = (row.status_cls === 'good' || row.status_cls === 'warn' || row.status_cls === 'bad') ? row.status_cls : null;
@@ -148,10 +179,12 @@ const PAD = {
   flight: 8,
   from: 3,
   to: 3,
+  terminal: 2,
+  gate: 3,
   alt: 5,
   dist: 5,
   gs: 4,
-  remark: 12
+  status: 12
 };
 
 const tbody = document.getElementById('rows');
@@ -196,6 +229,12 @@ function makeFlapTd(colKey, className, initial='—', padTo=null, extraLineClass
   return td;
 }
 
+function makeStatusTd(colKey, className, initial='—', padTo=null){
+  const td = makeFlapTd(colKey, className, initial, padTo);
+  td.dataset.isStatus = '1';
+  return td;
+}
+
 function setTd(td, text, { cls=null, delay=0, force=false } = {}){
   const span = td.querySelector('.flapline');
   const padTo = td.dataset.padTo ? parseInt(td.dataset.padTo, 10) : null;
@@ -212,13 +251,15 @@ function buildRow(r){
     makeFlapTd('flight','flight','—', PAD.flight)
   );
 
-  if (isColOn('from'))    tr.append(makeFlapTd('from', 'from', '—', PAD.from));
-  if (isColOn('to'))      tr.append(makeFlapTd('to', 'to', '—', PAD.to));
-  if (isColOn('alt_ft'))  tr.append(makeFlapTd('alt_ft', 'col-right', '—', PAD.alt));
+  if (isColOn('from'))     tr.append(makeFlapTd('from',     'from',      '—', PAD.from));
+  if (isColOn('to'))       tr.append(makeFlapTd('to',       'to',        '—', PAD.to));
+  if (isColOn('terminal')) tr.append(makeFlapTd('terminal', 'terminal',  '—', PAD.terminal));
+  if (isColOn('gate'))     tr.append(makeFlapTd('gate',     'gate',      '—', PAD.gate));
+  if (isColOn('alt_ft'))   tr.append(makeFlapTd('alt_ft',   'col-right', '—', PAD.alt));
   if (isColOn('dist_km')) tr.append(makeFlapTd('dist_km','col-right', '—', PAD.dist));
   if (isColOn('gs_kt'))   tr.append(makeFlapTd('gs_kt', 'col-right', '—', PAD.gs));
 
-  tr.append(makeFlapTd('remark','col-right','—', PAD.remark));
+  if (isColOn('status')) tr.append(makeStatusTd('status','col-right','—', PAD.status));
 
   updateRow(tr, r);
   return tr;
@@ -230,8 +271,9 @@ function updateRow(tr, r){
   const timeTxt = r.last_seen_epoch ? hhmm(r.last_seen_epoch) : '—';
   const airline = guessIata(r);
   const flight  = safe(r.flight).toUpperCase();
-  const from    = safe(r.from).toUpperCase();
-  const to      = safe(r.to).toUpperCase();
+  const from    = toIata(r.from);
+  const to      = toIata(r.to);
+  const tg      = inferGateTerminal(r);
 
   setTd(td('time'), timeTxt, { delay: 0 * COL_STAGGER });
 
@@ -252,15 +294,19 @@ function updateRow(tr, r){
 
   setTd(td('flight'), flight, { delay: 2 * COL_STAGGER });
 
-  if (isColOn('from'))    setTd(td('from'), from, { delay: 2 * COL_STAGGER });
-  if (isColOn('to'))      setTd(td('to'), to, { delay: 2 * COL_STAGGER });
-  if (isColOn('alt_ft'))  setTd(td('alt_ft'), fmt(r.alt_ft), { delay: 3 * COL_STAGGER });
+  if (isColOn('from'))     setTd(td('from'), from, { delay: 2 * COL_STAGGER });
+  if (isColOn('to'))       setTd(td('to'), to, { delay: 3 * COL_STAGGER });
+  if (isColOn('terminal')) setTd(td('terminal'), tg.terminal, { delay: 4 * COL_STAGGER });
+  if (isColOn('gate'))     setTd(td('gate'), tg.gate, { delay: 5 * COL_STAGGER });
+  if (isColOn('alt_ft'))   setTd(td('alt_ft'), fmt(r.alt_ft), { delay: 6 * COL_STAGGER });
   if (isColOn('dist_km')) setTd(td('dist_km'), fmt(r.dist_km), { delay: 4 * COL_STAGGER });
   if (isColOn('gs_kt'))   setTd(td('gs_kt'), fmt(r.gs_kt), { delay: 5 * COL_STAGGER });
 
-  const rem = remarkFor(r);
-  const cls = (rem.cls === 'good' || rem.cls === 'warn' || rem.cls === 'bad') ? rem.cls : null;
-  setTd(td('remark'), rem.txt, { cls, delay: 6 * COL_STAGGER });
+  if (isColOn('status')){
+    const st = statusFor(r);
+    const cls = (st.cls === 'good' || st.cls === 'warn' || st.cls === 'bad') ? st.cls : null;
+    setTd(td('status'), st.txt, { cls, delay: 8 * COL_STAGGER });
+  }
 }
 
 function showEmpty(){
@@ -300,7 +346,7 @@ async function refresh(forceRebuild=false){
       showEmpty();
       return;
     } else {
-      if (tbody.children.length === 1 && tbody.children[0].children.length === 1 && tbody.children[0].children[0].colSpan === 8){
+      if (tbody.children.length === 1 && tbody.children[0].children.length === 1){
         tbody.innerHTML = '';
       }
     }
@@ -338,5 +384,8 @@ function updateClock(){
 updateClock();
 setInterval(updateClock, 1000);
 
-refresh(true);
+loadIcaoMap().finally(() => {
+  refresh(true);
+});
 setInterval(() => refresh(false), 5000);
+

@@ -127,6 +127,11 @@ function guess_airport_icao_from_name(string $name): string {
     return '';
 }
 
+function guess_airport_iata_from_name(string $name): string {
+    if (preg_match('/\b([A-Z]{3})\b/', strtoupper($name), $m)) return $m[1];
+    return '';
+}
+
 function best_code(string $code, array $icaoToIata): string {
     $c = strtoupper(trim($code));
     if ($c === '' || $c === '\\N') return '';
@@ -190,10 +195,14 @@ $airportIcao = strtoupper((string)($config['airport']['icao'] ?? ''));
 if ($airportIcao === '') $airportIcao = guess_airport_icao_from_name((string)($config['airport']['name'] ?? ''));
 
 $airportIata = strtoupper((string)($config['airport']['iata'] ?? ''));
+if ($airportIata === '') $airportIata = guess_airport_iata_from_name((string)($config['airport']['name'] ?? ''));
 if ($airportIata === '' && $airportIcao !== '') {
     $airportIata = $icaoToIata[$airportIcao] ?? '';
 }
-if ($airportIata === '') $airportIata = $airportIcao;
+
+if ($airportIata === '') {
+    if (strlen($airportIcao) === 3 || strlen($airportIcao) === 4) $airportIata = $airportIcao;
+}
 
 $flightRoutes = load_flight_routes(__DIR__ . '/flights.dat');
 
@@ -344,9 +353,9 @@ foreach ($payload['aircraft'] as $a) {
 
     if ($dirEff === 'arrivals') {
         $row['from'] = $origCode !== '' ? $origCode : '';
-        $row['to']   = $airportIata;
+        $row['to']   = $destCode !== '' ? $destCode : '';
     } elseif ($dirEff === 'departures') {
-        $row['from'] = $airportIata;
+        $row['from'] = $origCode !== '' ? $origCode : '';
         $row['to']   = $destCode !== '' ? $destCode : '';
     } else {
         $row['from'] = $origCode;
@@ -387,3 +396,4 @@ echo json_encode([
     ],
 ], JSON_UNESCAPED_SLASHES);
 ?>
+

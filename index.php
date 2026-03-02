@@ -47,10 +47,12 @@ $cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['c
 						<th>Flight</th>
 						<?php if (!empty($cols['from'])): ?><th>From</th><?php endif; ?>
 						<?php if (!empty($cols['to'])): ?><th>To</th><?php endif; ?>
+						<?php if (!empty($cols['terminal'])): ?><th>Terminal</th><?php endif; ?>
+						<?php if (!empty($cols['gate'])): ?><th>Gate</th><?php endif; ?>
 						<?php if (!empty($cols['alt_ft'])): ?><th class="col-right">Height (FT)</th><?php endif; ?>
 						<?php if (!empty($cols['dist_km'])): ?><th class="col-right">Distance (KM)</th><?php endif; ?>
 						<?php if (!empty($cols['gs_kt'])): ?><th class="col-right">Speed (KT)</th><?php endif; ?>
-						<th class="col-right">Status</th>
+						<?php if (!empty($cols['status'])): ?><th class="col-right">Status</th><?php endif; ?>
 					</tr>
 				</thead>
 				<tbody id="rows"></tbody>

@@ -82,9 +82,12 @@ function write_config_file(array $cfg, string $path): bool {
     $php .= "    'columns' => [\t\t\t\t\t\t\t\t\t/* Toggle optional columns */";
     $php .= "        'from' => " . (!empty($cols['from']) ? 'true' : 'false') . ",";
     $php .= "        'to' => " . (!empty($cols['to']) ? 'true' : 'false') . ",";
+    $php .= "        'terminal' => " . (!empty($cols['terminal']) ? 'true' : 'false') . ",";
+    $php .= "        'gate' => " . (!empty($cols['gate']) ? 'true' : 'false') . ",";
     $php .= "        'alt_ft' => " . (!empty($cols['alt_ft']) ? 'true' : 'false') . ",";
     $php .= "        'dist_km' => " . (!empty($cols['dist_km']) ? 'true' : 'false') . ",";
     $php .= "        'gs_kt' => " . (!empty($cols['gs_kt']) ? 'true' : 'false') . ",";
+    $php .= "        'status' => " . (!empty($cols['status']) ? 'true' : 'false') . ",";
     $php .= "    ],";
 
     $php .= "    'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */";
@@ -172,9 +175,12 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     if (!isset($new['columns']) || !is_array($new['columns'])) $new['columns'] = [];
     $new['columns']['from'] = isset($_POST['col_from']);
     $new['columns']['to'] = isset($_POST['col_to']);
+    $new['columns']['terminal'] = isset($_POST['col_terminal']);
+    $new['columns']['gate'] = isset($_POST['col_gate']);
     $new['columns']['alt_ft'] = isset($_POST['col_alt_ft']);
     $new['columns']['dist_km'] = isset($_POST['col_dist_km']);
     $new['columns']['gs_kt'] = isset($_POST['col_gs_kt']);
+    $new['columns']['status'] = isset($_POST['col_status']);
 
     $pw_new = (string)($_POST['admin_password_new'] ?? '');
     if ($pw_new !== '') {
@@ -326,6 +332,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
                 <span>Show “To”</span>
               </label>
               <label class="adminCheck">
+                <input type="checkbox" name="col_terminal" <?php echo !empty($cols['terminal']) ? 'checked' : ''; ?>>
+                <span>Show “Terminal”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_gate" <?php echo !empty($cols['gate']) ? 'checked' : ''; ?>>
+                <span>Show “Gate”</span>
+              </label>
+              <label class="adminCheck">
                 <input type="checkbox" name="col_alt_ft" <?php echo !empty($cols['alt_ft']) ? 'checked' : ''; ?>>
                 <span>Show “Height (FT)”</span>
               </label>
@@ -336,6 +350,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
               <label class="adminCheck">
                 <input type="checkbox" name="col_gs_kt" <?php echo !empty($cols['gs_kt']) ? 'checked' : ''; ?>>
                 <span>Show “Speed (KT)”</span>
+              </label>
+              <label class="adminCheck">
+                <input type="checkbox" name="col_status" <?php echo !empty($cols['status']) ? 'checked' : ''; ?>>
+                <span>Show “Status”</span>
               </label>
             </div>
             <div class="adminSection">
