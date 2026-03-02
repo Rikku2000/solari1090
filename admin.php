@@ -109,6 +109,26 @@ function write_config_file(array $cfg, string $path): bool {
     $php .= "		'up_fpm' => " . (int)($status['up_fpm'] ?? 150) . ",								/* Minimum climb rate to call TAKE OFF */";
     $php .= "		'down_fpm' => " . (int)($status['down_fpm'] ?? 100) . ",								/* Minimum descent rate to call LANDING */";
     $php .= "	],";
+
+    // data_sources
+    $ds = $cfg['data_sources'] ?? [];
+    if (!is_array($ds)) $ds = [];
+    $cacheDir = (string)($ds['cache_dir'] ?? (__DIR__ . '/cache'));
+    $defaultTtl = 86400;
+
+    $php .= "    'data_sources' => [";
+    $php .= "        'cache_dir' => " . var_export($cacheDir, true) . ",";
+    foreach (['airports','airlines','routes'] as $k) {
+        $kcfg = $ds[$k] ?? [];
+        if (!is_array($kcfg)) $kcfg = [];
+        $php .= "        '{$k}' => [";
+        $php .= "            'source' => " . var_export((string)($kcfg['source'] ?? 'local'), true) . ",";
+        $php .= "            'custom_url' => " . var_export((string)($kcfg['custom_url'] ?? ''), true) . ",";
+        $php .= "            'ttl_s' => " . (int)($kcfg['ttl_s'] ?? $defaultTtl) . ",";
+        $php .= "        ],";
+    }
+    $php .= "    ],";
+
     $php .= "];";
     $php .= " ?>";
 
@@ -199,6 +219,18 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     $new['status']['up_fpm'] = int_from_post('status_up_fpm', (int)($config['status']['up_fpm'] ?? 150));
     $new['status']['down_fpm'] = int_from_post('status_down_fpm', (int)($config['status']['down_fpm'] ?? 100));
 
+    if (!isset($new['data_sources']) || !is_array($new['data_sources'])) $new['data_sources'] = [];
+    if (!isset($new['data_sources']['cache_dir']) || !is_string($new['data_sources']['cache_dir']) || $new['data_sources']['cache_dir'] === '') {
+        $new['data_sources']['cache_dir'] = __DIR__ . '/cache';
+    }
+
+    foreach (['airports','airlines','routes'] as $k) {
+        if (!isset($new['data_sources'][$k]) || !is_array($new['data_sources'][$k])) $new['data_sources'][$k] = [];
+        $new['data_sources'][$k]['source'] = strtolower(str_from_post('ds_' . $k . '_source', (string)($config['data_sources'][$k]['source'] ?? 'local')));
+        $new['data_sources'][$k]['custom_url'] = str_from_post('ds_' . $k . '_custom_url', (string)($config['data_sources'][$k]['custom_url'] ?? ''));
+        $new['data_sources'][$k]['ttl_s'] = int_from_post('ds_' . $k . '_ttl_s', (int)($config['data_sources'][$k]['ttl_s'] ?? '86400'));
+    }
+
     $ok = write_config_file($new, __DIR__ . '/config.php');
     if ($ok) {
         $notice = 'Saved. config.php updated.';
@@ -288,6 +320,51 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
               <label class="adminLabel" for="airport_search">Search</label>
               <input class="adminInput" id="airport_search" placeholder="Type name / city / IATA / ICAO (e.g. Berlin, TXL, EDDB)">
               <select class="adminInput" id="airport_select" size="5" style="height:auto;"></select>
+            </div>
+            <div class="adminSection">
+              <div class="adminSectionTitle">Airports Data</div>
+              <label class="adminLabel" for="ds_airports_source">Airports source</label>
+              <select class="adminInput" id="ds_airports_source" name="ds_airports_source">
+                <?php $v = strtolower((string)($config['data_sources']['airports']['source'] ?? 'local')); ?>
+                <option value="local"      <?php echo $v==='local'?'selected':''; ?>>Local (airports.dat)</option>
+                <option value="openflights"<?php echo $v==='openflights'?'selected':''; ?>>OpenFlights (GitHub)</option>
+                <option value="ourairports"<?php echo $v==='ourairports'?'selected':''; ?>>OurAirports (CSV)</option>
+                <option value="airportcodes"<?php echo $v==='airportcodes'?'selected':''; ?>>datasets/airport-codes (CSV)</option>
+                <option value="custom"     <?php echo $v==='custom'?'selected':''; ?>>Custom URL</option>
+              </select>
+              <label class="adminLabel" for="ds_airports_custom_url">Airports custom URL</label>
+              <input class="adminInput" id="ds_airports_custom_url" name="ds_airports_custom_url" placeholder="https://..." value="<?php echo h((string)($config['data_sources']['airports']['custom_url'] ?? '')); ?>">
+              <label class="adminLabel" for="ds_airports_ttl_s">Airports cache TTL (seconds)</label>
+              <input class="adminInput" id="ds_airports_ttl_s" name="ds_airports_ttl_s" value="<?php echo h((string)($config['data_sources']['airports']['ttl_s'] ?? '86400')); ?>">
+              <div style="height:1px;background:rgba(255,255,255,.18);margin:12px 0;"></div>
+            </div>
+            <div class="adminSection">
+              <div class="adminSectionTitle">Airlines Data</div>
+              <label class="adminLabel" for="ds_airlines_source">Airlines source</label>
+              <select class="adminInput" id="ds_airlines_source" name="ds_airlines_source">
+                <?php $v = strtolower((string)($config['data_sources']['airlines']['source'] ?? 'local')); ?>
+                <option value="local"      <?php echo $v==='local'?'selected':''; ?>>Local (airlines.dat)</option>
+                <option value="openflights"<?php echo $v==='openflights'?'selected':''; ?>>OpenFlights (GitHub)</option>
+                <option value="custom"     <?php echo $v==='custom'?'selected':''; ?>>Custom URL</option>
+              </select>
+              <label class="adminLabel" for="ds_airlines_custom_url">Airlines custom URL</label>
+              <input class="adminInput" id="ds_airlines_custom_url" name="ds_airlines_custom_url" placeholder="https://..." value="<?php echo h((string)($config['data_sources']['airlines']['custom_url'] ?? '')); ?>">
+              <label class="adminLabel" for="ds_airlines_ttl_s">Airlines cache TTL (seconds)</label>
+              <input class="adminInput" id="ds_airlines_ttl_s" name="ds_airlines_ttl_s" value="<?php echo h((string)($config['data_sources']['airlines']['ttl_s'] ?? '86400')); ?>">
+              <div style="height:1px;background:rgba(255,255,255,.18);margin:12px 0;"></div>
+            </div>
+            <div class="adminSection">
+              <div class="adminSectionTitle">Routes Data</div>
+              <label class="adminLabel" for="ds_routes_source">Routes source</label>
+              <select class="adminInput" id="ds_routes_source" name="ds_routes_source">
+                <?php $v = strtolower((string)($config['data_sources']['routes']['source'] ?? 'local')); ?>
+                <option value="local"  <?php echo $v==='local'?'selected':''; ?>>Local (flights.dat)</option>
+                <option value="custom" <?php echo $v==='custom'?'selected':''; ?>>Custom URL (JSON)</option>
+              </select>
+              <label class="adminLabel" for="ds_routes_custom_url">Routes custom URL</label>
+              <input class="adminInput" id="ds_routes_custom_url" name="ds_routes_custom_url" placeholder="https://.../flights.json" value="<?php echo h((string)($config['data_sources']['routes']['custom_url'] ?? '')); ?>">
+              <label class="adminLabel" for="ds_routes_ttl_s">Routes cache TTL (seconds)</label>
+              <input class="adminInput" id="ds_routes_ttl_s" name="ds_routes_ttl_s" value="<?php echo h((string)($config['data_sources']['routes']['ttl_s'] ?? '86400')); ?>">
             </div>
             <div class="adminSection">
               <div class="adminSectionTitle">Board</div>
@@ -495,9 +572,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     loading = true;
     selectEl.innerHTML = '<option>Loading airports…</option>';
     try{
-      const resp = await fetch('airports.dat', {cache:'no-cache'});
-      const text = await resp.text();
-      airports = parseAirports(text);
+      const resp = await fetch('datasource.php', {cache:'no-cache'});
+      const data = await resp.json();
+      airports = (data && data.airports) ? data.airports : [];
     }catch(e){
       airports = [];
     }finally{

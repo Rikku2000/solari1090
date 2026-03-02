@@ -25,7 +25,7 @@ $config = [
         'dist_km' => true,
         'gs_kt' => true,
         'status' => true,
-    ],								
+    ],
     'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */
     'state_ttl_s' => 600,									/* State TTL (seconds) */
     'admin_password' => 'changeme',							/* Admin password */
@@ -37,5 +37,24 @@ $config = [
 		'up_fpm' => 150,									/* Minimum climb rate to call TAKE OFF */
 		'down_fpm' => 100,									/* Minimum descent rate to call LANDING */
 	],
+    'data_sources' => [
+        'cache_dir' => __DIR__ . '/cache',
+        'airports' => [
+            'source' => 'local',							/* local | openflights | ourairports | airportcodes | custom */
+            'custom_url' => '',
+            'ttl_s' => 86400,
+        ],
+        'airlines' => [
+            'source' => 'local',							/* local | openflights | custom */
+            'custom_url' => '',
+            'ttl_s' => 86400,
+        ],
+        'routes' => [
+            'source' => 'local',							/* local | custom */
+            'custom_url' => '',								/* Must be JSON array: [ ["LH123","FRA","JFK"], ... ] */
+            'ttl_s' => 86400,
+        ],
+    ],
+
 ];
 ?>
