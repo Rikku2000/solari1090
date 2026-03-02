@@ -2,9 +2,11 @@
 $config = [
     'dump1090_base' => 'http://localhost/skyaware',			/* Dump1090 base URL */
     'airport' => [
-        'name' => 'Frankfurt Main Airport | EDDF',			/* Airport name */
-        'lat' => 50.0333,									/* Airport latitude */
-        'lon' => 8.5706,									/* Airport longitude */
+        'name' => 'Frankfurt International Airport (EDDF)',	/* Airport name */
+        'lat' => 50.0483,									/* Airport latitude */
+        'lon' => 8.57041,									/* Airport longitude */
+        'icao' => 'EDDF',									/* Airport icao */
+        'iata' => 'FRA',									/* Airport iata */
     ],
     'radius_km' => 30.0,									/* Radius (km) */
     'alt_ceiling_ft' => 12000,								/* Altitude ceiling (ft) */
@@ -17,9 +19,12 @@ $config = [
     'columns' => [											/* Toggle optional columns */
         'from' => true,
         'to' => true,
+        'terminal' => true,
+        'gate' => true,
         'alt_ft' => true,
         'dist_km' => true,
         'gs_kt' => true,
+        'status' => true,
     ],								
     'state_cache_file' => __DIR__ . '/state_cache.json',	/* State cache file */
     'state_ttl_s' => 600,									/* State TTL (seconds) */

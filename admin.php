@@ -68,6 +68,8 @@ function write_config_file(array $cfg, string $path): bool {
     $php .= "        'name' => " . var_export((string)($airport['name'] ?? ''), true) . ",			/* Airport name */";
     $php .= "        'lat' => " . (float)($airport['lat'] ?? 0.0) . ",								/* Airport latitude */";
     $php .= "        'lon' => " . (float)($airport['lon'] ?? 0.0) . ",								/* Airport longitude */";
+    $php .= "        'icao' => " . var_export((string)($airport['icao'] ?? ''), true) . ",			/* Airport icao */";
+    $php .= "        'iata' => " . var_export((string)($airport['iata'] ?? ''), true) . ",			/* Airport iata */";
     $php .= "    ],";
     $php .= "    'radius_km' => " . (float)($cfg['radius_km'] ?? 0.0) . ",								/* Radius (km) */";
     $php .= "    'alt_ceiling_ft' => " . (int)($cfg['alt_ceiling_ft'] ?? 0) . ",							/* Altitude ceiling (ft) */";
@@ -161,6 +163,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     $new['airport']['name'] = str_from_post('airport_name', (string)($config['airport']['name'] ?? ''));
     $new['airport']['lat']  = num_from_post('airport_lat', (float)($config['airport']['lat'] ?? 0.0));
     $new['airport']['lon']  = num_from_post('airport_lon', (float)($config['airport']['lon'] ?? 0.0));
+    $new['airport']['icao'] = str_from_post('airport_icao', (string)($config['airport']['icao'] ?? ''));
+    $new['airport']['iata'] = str_from_post('airport_iata', (string)($config['airport']['iata'] ?? ''));
 
     $new['radius_km']       = num_from_post('radius_km', (float)$config['radius_km']);
     $new['alt_ceiling_ft']  = int_from_post('alt_ceiling_ft', (int)$config['alt_ceiling_ft']);
@@ -271,9 +275,19 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
                   <input class="adminInput" id="airport_lon" name="airport_lon" value="<?php echo h((string)($config['airport']['lon'] ?? '')); ?>">
                 </div>
               </div>
+              <div class="adminRow2">
+                <div>
+                  <label class="adminLabel" for="airport_icao">ICAO</label>
+                  <input class="adminInput" id="airport_icao" name="airport_icao" value="<?php echo h((string)($config['airport']['icao'] ?? '')); ?>">
+                </div>
+                <div>
+                  <label class="adminLabel" for="airport_iata">IATA</label>
+                  <input class="adminInput" id="airport_iata" name="airport_iata" value="<?php echo h((string)($config['airport']['iata'] ?? '')); ?>">
+                </div>
+              </div>
               <label class="adminLabel" for="airport_search">Search</label>
               <input class="adminInput" id="airport_search" placeholder="Type name / city / IATA / ICAO (e.g. Berlin, TXL, EDDB)">
-              <select class="adminInput" id="airport_select" size="6" style="height:auto;"></select>
+              <select class="adminInput" id="airport_select" size="5" style="height:auto;"></select>
             </div>
             <div class="adminSection">
               <div class="adminSectionTitle">Board</div>
@@ -406,7 +420,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
   const nameEl = document.getElementById('airport_name');
   const latEl  = document.getElementById('airport_lat');
   const lonEl  = document.getElementById('airport_lon');
-  if(!searchEl || !selectEl || !nameEl || !latEl || !lonEl) return;
+  const icaoEl  = document.getElementById('airport_icao');
+  const iataEl  = document.getElementById('airport_iata');
+  if(!searchEl || !selectEl || !nameEl || !latEl || !lonEl || !icaoEl || !iataEl) return;
 
   let airports = null;
   let loading = false;
@@ -536,6 +552,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
       nameEl.value = a.name +' ('+ a.icao +')' || '';
       latEl.value = a.lat || '';
       lonEl.value = a.lon || '';
+      icaoEl.value = a.icao || '';
+      iataEl.value = a.iata || '';
     }catch(e){}
   });
 

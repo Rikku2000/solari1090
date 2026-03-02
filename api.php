@@ -353,9 +353,9 @@ foreach ($payload['aircraft'] as $a) {
 
     if ($dirEff === 'arrivals') {
         $row['from'] = $origCode !== '' ? $origCode : '';
-        $row['to']   = $destCode !== '' ? $destCode : '';
+        $row['to']   = $airportIata;
     } elseif ($dirEff === 'departures') {
-        $row['from'] = $origCode !== '' ? $origCode : '';
+        $row['from'] = $airportIata;
         $row['to']   = $destCode !== '' ? $destCode : '';
     } else {
         $row['from'] = $origCode;
