@@ -1,6 +1,10 @@
 <?php declare (strict_types = 1);
 require __DIR__ . '/config.php';
 $cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['columns'] : [];
+$theme = (string)($config['theme'] ?? 'style1.css');
+if (!preg_match('/^style[1-4]\\.css$/', $theme)) {
+    $theme = 'style1.css';
+}
 ?>
 <!doctype html>
 	<html lang="en">
@@ -8,7 +12,8 @@ $cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['c
 			<title>Solari1090</title>
 			<meta charset="utf-8">
 			<meta name="viewport" content="width=device-width,initial-scale=1">
-			<link rel="stylesheet" href="assets/style1.css">
+			<link rel="icon" type="image/png" href="favicon.png">
+			<link rel="stylesheet" href="assets/<?php echo htmlspecialchars($theme, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
 		</head>
 		<body>
 			<div id="preloader" class="preloader" role="status" aria-label="Loading">

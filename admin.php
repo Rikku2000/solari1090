@@ -60,10 +60,13 @@ function str_from_post(string $key, string $default): string {
 function write_config_file(array $cfg, string $path): bool {
     $airport = $cfg['airport'] ?? ['name'=>'','lat'=>0,'lon'=>0];
     $status  = $cfg['status']  ?? [];
+    $theme   = (string)($cfg['theme'] ?? 'style1.css');
+    if (!preg_match('/^style[1-4]\\.css$/', $theme)) $theme = 'style1.css';
 
     $php = "<?php ";
     $php .= "\$config = [";
     $php .= "    'dump1090_base' => " . var_export((string)($cfg['dump1090_base'] ?? ''), true) . ",			/* Dump1090 base URL */";
+    $php .= "    'theme' => " . var_export($theme, true) .",";
     $php .= "    'airport' => [";
     $php .= "        'name' => " . var_export((string)($airport['name'] ?? ''), true) . ",			/* Airport name */";
     $php .= "        'lat' => " . (float)($airport['lat'] ?? 0.0) . ",								/* Airport latitude */";
@@ -179,6 +182,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
 
     $new['dump1090_base'] = str_from_post('dump1090_base', (string)$config['dump1090_base']);
 
+    $theme_post = str_from_post('theme', (string)($config['theme'] ?? 'style1.css'));
+    if (!preg_match('/^style[1-4]\\.css$/', $theme_post)) $theme_post = 'style1.css';
+    $new['theme'] = $theme_post;
+
     if (!isset($new['airport']) || !is_array($new['airport'])) $new['airport'] = [];
     $new['airport']['name'] = str_from_post('airport_name', (string)($config['airport']['name'] ?? ''));
     $new['airport']['lat']  = num_from_post('airport_lat', (float)($config['airport']['lat'] ?? 0.0));
@@ -235,6 +242,8 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
     if ($ok) {
         $notice = 'Saved. config.php updated.';
         $config = $new;
+        $theme = (string)($config['theme'] ?? 'style1.css');
+        if (!preg_match('/^style[1-4]\\.css$/', $theme)) $theme = 'style1.css';
     } else {
         $errors[] = 'Could not write config.php. Check file permissions.';
     }
@@ -243,9 +252,10 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
 <!doctype html>
 <html lang="en">
 <head>
+  <title>Solari1090 Admin</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Solari1090 Admin</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="assets/style1.css">
 </head>
 <body>
@@ -413,6 +423,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
             </div>
             <div class="adminSection">
               <div class="adminSectionTitle">Display</div>
+              <div style="height:1px;background:rgba(255,255,255,.18);margin:12px 0;"></div>
               <?php $cols = (isset($config['columns']) && is_array($config['columns'])) ? $config['columns'] : []; ?>
               <label class="adminCheck">
                 <input type="checkbox" name="col_from" <?php echo !empty($cols['from']) ? 'checked' : ''; ?>>
@@ -479,9 +490,17 @@ if (isset($_POST['action']) && $_POST['action'] === 'save') {
               </div>
             </div>
             <div class="adminSection">
-              <div class="adminSectionTitle">Admin</div>
+              <div class="adminSectionTitle">Admin / System</div>
               <label class="adminLabel" for="admin_password_new">Change password (optional)</label>
               <input class="adminInput" id="admin_password_new" name="admin_password_new" type="password" autocomplete="new-password" placeholder="leave empty to keep">
+              <label class="adminLabel" for="theme">Theme</label>
+              <?php $curTheme = (string)($config['theme'] ?? 'style1.css'); if (!preg_match('/^style[1-4]\\.css$/', $curTheme)) $curTheme = 'style1.css'; ?>
+              <select class="adminInput" id="theme" name="theme">
+                <option value="style1.css" <?php echo $curTheme==='style1.css'?'selected':''; ?>>Theme 1</option>
+                <option value="style2.css" <?php echo $curTheme==='style2.css'?'selected':''; ?>>Theme 2</option>
+                <option value="style3.css" <?php echo $curTheme==='style3.css'?'selected':''; ?>>Theme 3</option>
+                <option value="style4.css" <?php echo $curTheme==='style4.css'?'selected':''; ?>>Theme 4</option>
+              </select>
             </div>
           </div>
           <button class="adminBtn" type="submit">Save</button>

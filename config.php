@@ -1,6 +1,7 @@
 <?php
 $config = [
     'dump1090_base' => 'http://localhost/skyaware',			/* Dump1090 base URL */
+    'theme' => 'style1.css',
     'airport' => [
         'name' => 'Frankfurt International Airport (EDDF)',	/* Airport name */
         'lat' => 50.0483,									/* Airport latitude */
@@ -55,6 +56,5 @@ $config = [
             'ttl_s' => 86400,
         ],
     ],
-
 ];
 ?>
